@@ -1,0 +1,7 @@
+streamlit
+pandas
+numpy
+pillow
+pymysql
+bcrypt
+streamlit-plugins

@@ -1,0 +1,14 @@
+# Container environment variables for this app
+# Copy to your container env file (e.g. Docker Compose env_file:)
+
+# Streamlit/Python (optional; already set in Dockerfile)
+PYTHONDONTWRITEBYTECODE=1
+PYTHONUNBUFFERED=1
+
+# MariaDB connection (used in auth/auth.py via os.getenv)
+MARIADB_HOST=127.0.0.1
+MARIADB_PORT=3306
+MARIADB_USER=dashboard
+MARIADB_PASSWORD=PUT_PASSWORD_HERE
+MARIADB_DATABASE=climateproject
+
