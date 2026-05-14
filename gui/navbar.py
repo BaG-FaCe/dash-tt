@@ -1,5 +1,11 @@
 import streamlit as st
 
+from gui.controller_verwaltung import render_controller_verwaltung_page
+from gui.dashboard import render_dashboard_page
+from gui.einstellungen import render_einstellungen_page
+from gui.startseite import render_startseite_page
+
+
 def render_navbar_side_dashboard():
     """
     Generic empty page after login with a navbar in sidebar/top/side.
@@ -8,7 +14,6 @@ def render_navbar_side_dashboard():
     """
     # Sidebar top-level (fallback)
     def fallback_navigation():
-
         main_page = st.sidebar.radio(
             "Kapitel",
             ["Startseite", "Dashboard", "Controller Verwaltung", "Einstellungen"],
@@ -17,40 +22,13 @@ def render_navbar_side_dashboard():
         )
 
         if main_page == "Startseite":
-            st.title("Startseite")
-            st.info("Leere Seite (nach Login).")
-
+            render_startseite_page()
         elif main_page == "Dashboard":
-            sub = st.sidebar.radio(
-                "Dashboard Unterkategorien",
-                ["Visualisierung", "Manueller Eintrag"],
-                index=0,
-                key="dashboard_sub_radio",
-            )
-            st.title("Dashboard")
-            if sub == "Visualisierung":
-                st.subheader("Visualisierung")
-            else:
-                st.subheader("Manueller Eintrag")
-            st.info("Leere Seite (nach Login).")
-
+            render_dashboard_page()
         elif main_page == "Controller Verwaltung":
-            sub = st.sidebar.radio(
-                "Controller Verwaltung",
-                ["Kontrolle ESP32", "Verwaltung ESP32"],
-                index=0,
-                key="controller_sub_radio",
-            )
-            st.title("Controller Verwaltung")
-            if sub == "Kontrolle ESP32":
-                st.subheader("Kontrolle ESP32")
-            else:
-                st.subheader("Verwaltung ESP32")
-            st.info("Leere Seite (nach Login).")
-
+            render_controller_verwaltung_page()
         else:  # Einstellungen
-            st.title("Einstellungen")
-            st.info("Leere Seite (nach Login).")
+            render_einstellungen_page()
 
     # DEBUG: bypass plugin navbar to verify native sidebar rendering.
     # Later we can re-enable st_navbar and keep only fallback_navigation() for content routing.
