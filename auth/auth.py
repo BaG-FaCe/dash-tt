@@ -34,7 +34,9 @@ def get_db_connection():
     """
     if pymysql is None:
         _db_error(
-            "MariaDB-Anbindung nicht möglich: 'pymysql' ist nicht installiert."
+            "MariaDB-Anbindung nicht möglich: 'pymysql' ist nicht installiert. "
+            "Bitte sicherstellen, dass 'pymysql' in requirements.txt installiert ist "
+            "und Streamlit im richtigen Environment läuft."
         )
 
     host = os.getenv("MARIADB_HOST", "mariadb")

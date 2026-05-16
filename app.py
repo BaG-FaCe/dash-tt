@@ -20,27 +20,7 @@ os.environ.setdefault("MARIADB_DATABASE", "climateproject")
 
 
 # Deploy-Button, Hamburger-Menü und Footer ausblenden
-hide_streamlit_style = """
-    <style>
-    /* Deploy-Button */
-    [data-testid="stDeployButton"] {
-        display: none !important;
-    }
-    /* Hamburger-Menü (oben rechts) */
-    [data-testid="stToolbar"] {
-        display: none !important;
-    }
-    /* Footer "Made with Streamlit" */
-    footer {
-        display: none !important;
-    }
-    /* Optional: Header-Balken komplett ausblenden */
-    header[data-testid="stHeader"] {
-        display: none !important;
-    }
-    </style>
-"""
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 
 

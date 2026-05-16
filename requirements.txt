@@ -5,3 +5,6 @@ pillow
 pymysql
 bcrypt
 streamlit-plugins
+folium
+streamlit-folium
+streamlit-autorefresh
