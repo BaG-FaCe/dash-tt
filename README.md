@@ -77,24 +77,76 @@ MariaDB-Verbindungsdaten werden aktuell in `app.py` über `os.environ.setdefault
 
 Empfehlung: In Docker/Production diese Werte per **Environment Variables** übergeben und nicht hart im Code lassen.
 
+## Nutzung der App
+Die App ist als Streamlit-Dashboard ausgelegt und zeigt Umweltdaten, Grafiken und Karten in einer klaren Benutzeroberfläche.
+
+- **Grafik-Elemente:** Die wichtigsten Visualisierungen befinden sich im `gui/dashboard.py`. Achte darauf, dass Diagramme und Karten beschriftet sind, damit Nutzer sofort erkennen, was angezeigt wird.
+- **Navigation:** Nutze die Sidebar für die Auswahl von Kapiteln wie Startseite, Dashboard, Controller-Verwaltung und Einstellungen.
+- **Karten/Daten:** Wenn GPS- oder Umweltdaten angezeigt werden, sollten sie als Punkte oder Route auf der Karte dargestellt werden. Eine Legende oder Hilfetexte machen die Darstellung verständlicher.
+- **Hervorhebungen:** Wichtige Status-Informationen bitte farblich oder mit Text hervorheben (z. B. „Aktiv“, „Fehler“, „Letzte Aktualisierung“).
+
 ## Starten der App (lokal)
 1. Virtuelle Umgebung aktivieren (falls vorhanden):
-   
+
 ```bash
-   source venv/bin/activate
-   
+source venv/bin/activate
 ```
+
 2. Abhängigkeiten installieren:
-   
+
 ```bash
-   pip install -r requirements.txt
-   
+pip install -r requirements.txt
 ```
+
 3. Streamlit starten:
-   
+
 ```bash
-   streamlit run app.py
-   ```
+streamlit run app.py
+```
+
+4. Die App im Browser öffnen:
+
+- Standardmäßig: `http://localhost:8501`
+- Wenn der Port oder die Adresse angepasst wurde, die entsprechende URL verwenden.
+
+## Portainer Deployment
+Diese App kann direkt über Portainer als Container bereitgestellt werden. Vorausgesetzt ist ein lauffähiges `Dockerfile` im Projektverzeichnis.
+
+### 1. Docker-Image bauen
+Im Projektordner ausführen:
+
+```bash
+docker build -t klima-dashboard .
+```
+
+### 2. Container in Portainer anlegen
+1. Portainer öffnen.
+2. In der linken Navigation auf **Containers** klicken.
+3. Auf **Add container** klicken.
+4. Einen eindeutigen Namen vergeben, z. B. `klima-dashboard`.
+5. Als **Image** `klima-dashboard` eintragen.
+6. Unter **Publish a new network port** den Host-Port und den Container-Port anlegen:
+   - Host-Port: `8501`
+   - Container-Port: `8501`
+7. Falls erforderlich, Umgebungsvariablen setzen:
+   - `MARIADB_HOST`
+   - `MARIADB_PORT`
+   - `MARIADB_USER`
+   - `MARIADB_PASSWORD`
+   - `MARIADB_DATABASE`
+8. Auf **Deploy the container** klicken.
+
+### 3. Container prüfen
+- Nach dem Start die Logs ansehen, um sicherzustellen, dass Streamlit erfolgreich gestartet ist.
+- Zugriff über den Browser prüfen: `http://<IP-des-Servers>:8501`
+- Bei Problemen:
+  - Logs des Containers in Portainer prüfen.
+  - Netzwerk-/Port-Konfiguration verifizieren.
+  - Gegebenenfalls den Container neu starten.
+
+### 4. Empfehlung für Portainer
+- Für persistente Konfigurationen oder Datenvolumes kann ein Volume-Mount in Portainer eingerichtet werden.
+- Bei Nutzung von Datenbanken sollte ggf. ein separates Docker-Netzwerk verwendet werden, damit die Container sicher miteinander kommunizieren.
 
 ## Docker (falls verwendet)
 Wenn ein `Dockerfile` vorhanden ist (hier vorhanden), kann die App typischerweise gebaut und gestartet werden. Beispiel (je nach Dockerfile/Setup):

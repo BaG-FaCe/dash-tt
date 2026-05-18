@@ -6,15 +6,13 @@ def render_controller_verwaltung_page() -> None:
 
     sub = st.sidebar.radio(
         "Controller Verwaltung",
-        ["Kontrolle ESP32", "Verwaltung ESP32"],
+        ["Kontrolle ESP32"],
         index=0,
         key="controller_sub_radio",
     )
 
     if sub == "Kontrolle ESP32":
         render_esp32_control()
-    else:
-        render_esp32_verwaltung()
 
 
 def render_esp32_control() -> None:
@@ -29,7 +27,7 @@ def render_esp32_control() -> None:
 
     with col1:
         # Display current backend status
-        status = "🟢 Läuft" if manager.is_running() else "🔴 Gestoppt"
+        status = "Läuft" if manager.is_running() else "Gestoppt"
         st.metric("Backend Status", status)
 
     with col2:
@@ -64,7 +62,7 @@ def render_esp32_control() -> None:
     st.markdown("### Datenerfassung Steuerung")
 
     if not manager.is_running():
-        st.warning("⚠️ Backend muss laufen, um die Datenerfassung zu steuern!")
+        st.warning("Backend muss laufen, um die Datenerfassung zu steuern!")
     else:
         # Toggle for control signal
         col1, col2 = st.columns([1, 2], gap="small")
@@ -81,17 +79,17 @@ def render_esp32_control() -> None:
                 st.session_state.control_signal = control_toggle
                 if manager.send_control_signal(control_toggle):
                     if control_toggle:
-                        st.success("✅ Datenerfassung gestartet!")
+                        st.success("Datenerfassung gestartet!")
                     else:
-                        st.info("⏸️ Datenerfassung gestoppt!")
+                        st.info("Datenerfassung gestoppt!")
                 else:
                     st.error("Fehler beim Senden des Steuersignals")
 
         # Status indicator
         if st.session_state.control_signal:
-            st.success("🟢 Datenerfassung aktiv - ESP32 Daten werden aufgezeichnet")
+            st.success("Datenerfassung aktiv - ESP32 Daten werden aufgezeichnet")
         else:
-            st.info("🔴 Datenerfassung inaktiv - ESP32 Daten werden ignoriert")
+            st.info("Datenerfassung inaktiv - ESP32 Daten werden ignoriert")
 
     st.divider()
 
@@ -100,9 +98,3 @@ def render_esp32_control() -> None:
     session_key = manager.get_session_key()
     st.code(session_key, language="text")
     st.caption(f"Diese Session-ID wird mit allen aufgezeichneten Daten gespeichert und ermöglicht die Zuordnung von Messungen.")
-
-
-def render_esp32_verwaltung() -> None:
-    """Management interface for ESP32."""
-    st.subheader("ESP32 Verwaltung")
-    st.info("Diese Seite wird noch konfiguriert.")

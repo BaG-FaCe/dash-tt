@@ -404,7 +404,7 @@ def _render_manueller_eintrag() -> None:
                 },
             )
 
-            if st.button("💾 Änderungen speichern", key="btn_save_edits", type="primary"):
+            if st.button("Änderungen speichern", key="btn_save_edits", type="primary"):
                 errors: list[str] = []
                 # We use (session_id, measurement_date) as the natural PK.
                 # Iterate over edited rows and UPDATE each one individually.
@@ -441,7 +441,7 @@ def _render_manueller_eintrag() -> None:
             # Download as CSV
             csv_bytes = df_edit.to_csv(index=False).encode("utf-8")
             st.download_button(
-                "⬇️ Als CSV herunterladen",
+                "Als CSV herunterladen",
                 data=csv_bytes,
                 file_name=f"{edit_session}.csv",
                 mime="text/csv",
@@ -486,7 +486,7 @@ def render_dashboard_page() -> None:
         st.caption("Refresh betrifft: Dropdown, Map und Graphen.")
 
     st.sidebar.slider(
-        "Points shown (Charts)",
+        "Max. angezeigte Punkte(Charts)",
         min_value=50, max_value=5000,
         value=int(st.session_state.get("dashboard_points_shown", 500)),
         step=50, key="dashboard_points_shown",
@@ -497,7 +497,7 @@ def render_dashboard_page() -> None:
         key="dashboard_show_route",
     )
     st.sidebar.slider(
-        "Points shown (Map)",
+        "Max. angezeigte Punkte(Map)",
         min_value=50, max_value=5000,
         value=int(st.session_state.get("dashboard_map_points_limit", 500)),
         step=50, key="dashboard_map_points_limit",
