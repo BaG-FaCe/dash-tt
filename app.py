@@ -9,6 +9,7 @@ from PIL import Image
 
 from auth.auth import login, register_user
 from gui.navbar import render_navbar_side_dashboard, render_navbar_top_dashboard
+from backend_manager import BackendManager
 
 # --- MariaDB credentials via env (fülle die Werte später im Container ein) ---
 os.environ.setdefault("MARIADB_HOST", "127.0.0.1")
@@ -61,6 +62,12 @@ if "user_email" not in st.session_state:
 
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
+
+if "backend_manager" not in st.session_state:
+    st.session_state.backend_manager = BackendManager()
+
+if "control_signal" not in st.session_state:
+    st.session_state.control_signal = False
 
 # -----------------------------
 # Main App Flow
