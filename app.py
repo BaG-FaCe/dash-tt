@@ -14,8 +14,8 @@ from backend_manager import BackendManager
 # --- MariaDB credentials via env (fülle die Werte später im Container ein) ---
 os.environ.setdefault("MARIADB_HOST", "127.0.0.1")
 os.environ.setdefault("MARIADB_PORT", "3306")
-os.environ.setdefault("MARIADB_USER", "root")
-os.environ.setdefault("MARIADB_PASSWORD", "admin")
+os.environ.setdefault("MARIADB_USER", "dashboard1")
+os.environ.setdefault("MARIADB_PASSWORD", "dashpw")
 os.environ.setdefault("MARIADB_DATABASE", "climateproject")
 
 
