@@ -19,7 +19,15 @@ os.environ.setdefault("MARIADB_DATABASE", "climateproject")
 
 
 
-# Deploy-Button, Hamburger-Menü und Footer ausblenden
+# Deploy-Button und Footer ausblenden
+#Funktioniert niicht
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 
@@ -41,6 +49,18 @@ if "logged_in" not in st.session_state:
 
 if "open_register" not in st.session_state:
     st.session_state.open_register = False
+
+if "current_user" not in st.session_state:
+    st.session_state.current_user = None
+
+if "user_role" not in st.session_state:
+    st.session_state.user_role = "user"
+
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
+
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
 
 # -----------------------------
 # Main App Flow

@@ -11,6 +11,7 @@ from streamlit_folium import st_folium
 from streamlit_autorefresh import st_autorefresh
 
 
+
 # ---------------------------------------------------------------------------
 # DB helpers
 # ---------------------------------------------------------------------------

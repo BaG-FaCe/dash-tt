@@ -8,3 +8,5 @@ streamlit-plugins
 folium
 streamlit-folium
 streamlit-autorefresh
+paho-mqtt
+

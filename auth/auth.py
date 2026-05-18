@@ -195,11 +195,18 @@ def _resolve_created_by_id(created_by: str | int):
             return row.get("id")
 
 
-def create_user(username: str, email: str, password: str, created_by: str | int):
-    password_hash = hash_password(password)
+def create_user(
+    username: str,
+    email: str,
+    password: str,
+    created_by: str | int,
+    role: str = "user",
+    status: str = "active",
+):
+    if user_exists(username):
+        return False
 
-    role = "user"
-    status = "active"
+    password_hash = hash_password(password)
     created_by_id = _resolve_created_by_id(created_by)
 
     with get_db_connection() as conn:
@@ -275,6 +282,10 @@ def login():
                 st.error("Ungültige Anmeldeinformationen")
                 return
 
+            if user.get("status") == "inactive":
+                st.error("Ihr Konto ist deaktiviert. Bitte wenden Sie sich an einen Administrator.")
+                return
+
             ok = verify_password(password, user.get("password"))
             if not ok:
                 st.error("Ungültige Anmeldeinformationen")
@@ -283,9 +294,64 @@ def login():
             st.success("Erfolgreich eingeloggt!")
             st.session_state.logged_in = True
             st.session_state.open_register = False
+            st.session_state.current_user = user.get("username")
+            st.session_state.user_role = user.get("role", "user")
+            st.session_state.user_email = user.get("email")
+            st.session_state.user_id = user.get("id")
             st.rerun()
         except Exception as e:
             st.error(f"Login fehlgeschlagen (DB/Hash): {e}")
+
+
+def update_user(
+    username: str,
+    email: str | None = None,
+    role: str | None = None,
+    status: str | None = None,
+    password: str | None = None,
+) -> bool:
+    changed_at_col = None
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            changed_at_col = _normalize_changed_at_column(cursor)
+
+            assignments = []
+            values = []
+
+            if email is not None:
+                assignments.append("email=%s")
+                values.append(email)
+            if role is not None:
+                assignments.append("role=%s")
+                values.append(role)
+            if status is not None:
+                assignments.append("status=%s")
+                values.append(status)
+            if password is not None:
+                assignments.append("password=%s")
+                values.append(hash_password(password))
+
+            if not assignments:
+                return False
+
+            assignments.append(f"{changed_at_col}=NOW()")
+            sql = f"UPDATE users SET {', '.join(assignments)} WHERE username=%s"
+            values.append(username)
+            cursor.execute(sql, tuple(values))
+            return cursor.rowcount > 0
+
+
+def fetch_all_users():
+    with get_db_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, username, email, role, status, created_at, changed_at, created_by
+                FROM users
+                ORDER BY username
+                """
+            )
+            return cursor.fetchall()
 
 
 @st.dialog(title="Regestrierung für Tettnang Umwelt Dashboard")
