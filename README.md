@@ -176,9 +176,6 @@ Siehe auch:
 - `TODO.md`
 
 ## Screenshots
-
-Below are screenshots from the `docu_res/` folder illustrating the main pages and features.
-
 - **Startseite**
 
   ![Startseite](docu_res/Tettnang-Umwelt-Dashboard_start.png)
