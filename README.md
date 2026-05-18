@@ -174,3 +174,79 @@ Falls die Plugin-Navbar (z.B. `st_navbar`) Probleme macht oder das Layout überl
 ## TODO
 Siehe auch:
 - `TODO.md`
+
+## Screenshots
+
+Below are screenshots from the `docu_res/` folder illustrating the main pages and features.
+
+- **Startseite**
+
+  ![Startseite](docu_res/Tettnang-Umwelt-Dashboard_start.png)
+
+- **Dashboard — Visualisierung**
+
+  ![Dashboard Graph](docu_res/Tettnang-Umwelt-Dashboard_graph.png)
+
+- **Dashboard — Manueller Eintrag**
+
+  ![Manual Data Entry](docu_res/Tettnang-Umwelt-Dashboard_manual_data.png)
+
+- **Controller Verwaltung — Kontrolle**
+
+  ![Controller Control](docu_res/Tettnang-Umwelt-Dashboard_controller_controll.png)
+
+- **Registrierung / Benutzer**
+
+  ![Register](docu_res/Tettnang-Umwelt-Dashboard_register.png)
+
+- **Benutzereinstellungen**
+
+  ![User Settings](docu_res/Tettnang-Umwelt-Dashboard_user_settings.png)
+
+- **Overview / Landing**
+
+  ![Overview](docu_res/Tettnang-Umwelt-Dashboard.png)
+
+## Seiten (Kurzbeschreibung)
+
+- **Startseite** ([gui/startseite.py](gui/startseite.py)):
+  - Begrüßungs- und Übersichtsseite; erklärt Funktionen des Dashboards und führt zur Navigation.
+  - Eignet sich, um neuen Anwendern schnell die verfügbaren Bereiche (Visualisierung, Controller, Einstellungen) zu zeigen.
+
+- **Dashboard** ([gui/dashboard.py](gui/dashboard.py)):
+  - Hauptseite für Datenvisualisierung und Analyse.
+  - Unterkategorien:
+    - **Visualisierung**: Interaktive Plotly-Charts für Höhe, Temperatur, Luftfeuchte und Luftdruck; Folium-Karte mit GPS-Punkten/Route.
+    - **Manueller Eintrag**: Session-Verwaltung (umbenennen), manuelles Hinzufügen einzelner Messpunkte, tabellarischer Editor und CSV-Export.
+  - Datenquelle: Tabelle `environmental_data` über Datenbankverbindung aus [auth/auth.py](auth/auth.py).
+
+- **Controller Verwaltung** ([gui/controller_verwaltung.py](gui/controller_verwaltung.py)):
+  - Schnittstelle zur Steuerung des Backend-Managers (z. B. Start/Stop, Session-Key anzeigen).
+  - Steuerung der Datenerfassung für angeschlossene ESP32-Controller (Steuersignal toggeln).
+
+- **Einstellungen** ([gui/einstellungen.py](gui/einstellungen.py)):
+  - Persönliche Einstellungen: Passwort ändern, Anzeigeoptionen.
+  - Admin-Bereich: Benutzerübersicht, Rollen/Status ändern, Benutzer erstellen.
+
+- **Login / Authentifizierung** ([auth/auth.py](auth/auth.py) & [app.py](app.py)):
+  - Login-Flow und Session-Handling: bei nicht eingeloggten Nutzern wird dasLogin-Formular angezeigt; nach Login wird Navigation und Dashboard gerendert.
+  - DB-Verbindung und Benutzerverwaltung leben in `auth/auth.py`.
+
+## Wie die Seiten zusammenarbeiten
+
+- **Routing & Navigation**: Die Navigation wird in [gui/navbar.py](gui/navbar.py) gesteuert. Nach dem Login wird `render_navbar_top_dashboard()` und `render_navbar_side_dashboard()` verwendet; die native Sidebar ist die Fallback-Routing-Logik.
+
+- **Datenfluss**: Das `dashboard` liest Messdaten aus der Datenbank (`environmental_data`) über `get_db_connection()` (siehe [auth/auth.py](auth/auth.py)). Charts werden aus Pandas-DataFrames mit Plotly erzeugt; Karten mit Folium gerendert und mit `streamlit_folium` eingebettet.
+
+- **Controller / Backend**: Der Backend-Manager (in `backend_manager.py` / `backend.py`) stellt Start/Stop-Funktionen und ein Steuersignal bereit; die Controller-Verwaltungsseite sendet diese Signale und zeigt Statusinformationen an.
+
+- **Benutzerverwaltung**: Admins können Benutzer anlegen/ändern; Einstellungen synchronisieren über Funktionen in `auth/auth.py`.
+
+## Hinweise & Empfehlungen
+
+- Bilder: Die Screenshots liegen in `docu_res/` — beim Export/Container-Build sicherstellen, dass dieses Verzeichnis im Image enthalten ist, falls Sie die README-Bilder in der Container-Dokumentation zeigen wollen.
+- Konfiguration: Produktionswerte (Datenbank-Zugang) per Environment-Variablen setzen, nicht in Code (siehe `config.toml` und Docker-Abschnitt).
+
+---
+
+If you want, I can further refine the page descriptions (e.g. add list of available controls per page), commit the changes, or generate a short developer-oriented quickstart. Which would you like next?
