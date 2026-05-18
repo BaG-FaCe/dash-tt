@@ -189,7 +189,24 @@ def _apply_alpha_to_color(color: str, alpha: float) -> str:
     return c
 
 
-def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str) -> go.Figure:
+def _get_y_axis_range(values: pd.Series, zoom_factor: float) -> list[float] | None:
+    if values.empty:
+        return None
+
+    y_min = float(values.min())
+    y_max = float(values.max())
+    if y_min == y_max:
+        delta = abs(y_min) * 0.05 or 1.0
+        return [y_min - delta, y_max + delta]
+
+    center = (y_min + y_max) / 2
+    delta = y_max - y_min
+    padding = max(delta * 0.05, abs(center) * 0.02, 0.1)
+    half_range = (delta / 2 + padding) * zoom_factor
+    return [center - half_range, center + half_range]
+
+
+def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str, y_zoom_factor: float = 1.0) -> go.Figure:
     series = df[["measurement_date", col]].dropna()
 
     fillcolor = _apply_alpha_to_color(color, 0.08)
@@ -247,6 +264,7 @@ def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str) -> go
             showline=False,
             zeroline=False,
             tickfont=dict(size=11),
+            range=_get_y_axis_range(series[col], y_zoom_factor),
         ),
 
         # Crosshair cursor on hover
@@ -263,7 +281,7 @@ def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str) -> go
     return fig
 
 
-def _render_charts(df: pd.DataFrame) -> None:
+def _render_charts(df: pd.DataFrame, y_zoom_factor: float) -> None:
     if df.empty:
         st.warning("Keine Daten für die gewählte Session gefunden.")
         return
@@ -274,7 +292,7 @@ def _render_charts(df: pd.DataFrame) -> None:
     c3, c4 = st.columns(2, gap="medium")
 
     for (col, title, color), container in zip(_CHART_DEFS, [c1, c2, c3, c4]):
-        fig = _make_plotly_chart(df, col, title, color)
+        fig = _make_plotly_chart(df, col, title, color, y_zoom_factor=y_zoom_factor)
         container.plotly_chart(
             fig,
             use_container_width=True,
@@ -502,6 +520,14 @@ def render_dashboard_page() -> None:
         value=int(st.session_state.get("dashboard_map_points_limit", 500)),
         step=50, key="dashboard_map_points_limit",
     )
+    st.sidebar.slider(
+        "Y-Achsenskalierung",
+        min_value=0.25, max_value=3.0,
+        value=float(st.session_state.get("dashboard_y_axis_zoom", 1.0)),
+        step=0.25, format="%.2f",
+        help="Kleinere Werte zoomen stärker in den Messbereich hinein, größere Werte zeigen mehr Abstand.",
+        key="dashboard_y_axis_zoom",
+    )
 
     if enabled:
         st_autorefresh(
@@ -542,7 +568,7 @@ def render_dashboard_page() -> None:
     )
 
     st.markdown("### Messwerte")
-    _render_charts(df)
+    _render_charts(df, y_zoom_factor=float(st.session_state.dashboard_y_axis_zoom))
 
     now_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     st.caption(f"Letztes Update: {now_utc}")
