@@ -1,39 +1,3 @@
-"""
-backend.py
-==========
-Purposes:
-  1. Subscribe to MQTT topic and parse ESP32 sensor payload
-  2. Enrich data with GPS coordinates from a second MQTT topic
-     (sensors2mqtt/haha/location) published by a phone/GPS app
-  3. Replace ESP32 timestamps with the authoritative system UTC time
-  4. Insert enriched records into MariaDB
-
-GPS via MQTT:
-  The GPS source publishes to:
-    Topic : sensors2mqtt/haha
-    Payload: {
-      "status": "connected",
-      "time":   "2026-05-18 10:37:01",
-      "sensors": [
-        {
-          "type": "location",
-          "values": {
-            "latitude":  47.666173,
-            "longitude": 9.5954917,
-            "altitude":  518.2999877929688,
-            "speedmps":  0.0,
-            "speedKmph": 0,
-            "speedMph":  0
-          },
-          "measure": "no"
-        }
-      ]
-    }
-
-Dependencies:
-  pip install paho-mqtt mysql-connector-python
-"""
-
 import os
 import re
 import json
