@@ -12,7 +12,7 @@ from gui.navbar import render_navbar_side_dashboard, render_navbar_top_dashboard
 from backend_manager import BackendManager
 
 # --- MariaDB credentials via env (fülle die Werte später im Container ein) ---
-os.environ.setdefault("MARIADB_HOST", "172.21.0.2")
+os.environ.setdefault("MARIADB_HOST", "172.21.0.3")
 os.environ.setdefault("MARIADB_PORT", "3306")
 os.environ.setdefault("MARIADB_USER", "dashboard1")
 os.environ.setdefault("MARIADB_PASSWORD", "dashpw")
