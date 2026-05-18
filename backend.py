@@ -14,7 +14,7 @@ from paho.mqtt.client import CallbackAPIVersion
 # ---------------------------------------------------------------------------
 # Config via environment variables
 # ---------------------------------------------------------------------------
-os.environ.setdefault("MARIADB_HOST",     "127.0.0.1")
+os.environ.setdefault("MARIADB_HOST",     "172.21.0.2")
 os.environ.setdefault("MARIADB_PORT",     "3306")
 os.environ.setdefault("MARIADB_USER",     "dashboard1")
 os.environ.setdefault("MARIADB_PASSWORD", "dashpw")
