@@ -5,7 +5,7 @@ from auth.auth import create_user, fetch_user_by_username, fetch_all_users, upda
 
 def _render_personal_settings(user: dict) -> None:
     st.header("Meine Einstellungen")
-    st.info("Hier können Sie Ihr eigenes Passwort ändern und das Aussehen der App anpassen.")
+    st.info("Hier können Sie Ihr eigenes Passwort ändern.")
 
     st.text_input("Benutzername", value=user.get("username", ""), disabled=True)
     st.text_input("E-Mail", value=user.get("email", ""), disabled=True)

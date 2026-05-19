@@ -24,13 +24,14 @@ def _db_error(msg: str) -> None:
 
 def get_db_connection():
     """
-    MariaDB connection via pymysql.
-    Config via environment variables:
-      - MARIADB_HOST (default 127.0.0.1)
-      - MARIADB_PORT (default 3306)
-      - MARIADB_USER (default dashboard)
-      - MARIADB_PASSWORD (default dashpw)
-      - MARIADB_DATABASE (default climateproject)
+    Stellt eine MariaDB-Verbindung über pymysql her.
+
+    Konfiguration über Umgebungsvariablen:
+      - MARIADB_HOST (Standard: 127.0.0.1)
+      - MARIADB_PORT (Standard: 3306)
+      - MARIADB_USER (Standard: dashboard)
+      - MARIADB_PASSWORD (Standard: dashpw)
+      - MARIADB_DATABASE (Standard: climateproject)
     """
     if pymysql is None:
         _db_error(
@@ -59,8 +60,10 @@ def get_db_connection():
 
 def hash_password(password: str) -> str:
     """
-    Returns a string that encodes the algorithm so verify_password can work.
-    Prefer bcrypt; fallback to PBKDF2-HMAC-SHA256.
+    Erzeugt einen Passwort-Hash im Format, das von verify_password interpretiert
+    werden kann.
+
+    Bevorzugt bcrypt; Fallback ist PBKDF2-HMAC-SHA256.
     """
     if bcrypt is not None:
         pw_bytes = password.encode("utf-8")
@@ -88,6 +91,9 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
+    """
+    Prüft, ob ein Klartext-Passwort zu einem gespeicherten Passwort-Hash passt.
+    """
     if not password_hash:
         return False
 
@@ -119,7 +125,8 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 def _normalize_changed_at_column(cursor) -> str:
     """
-    Tries to detect whether the column is `changed_at` or literally `changed at`.
+    Versucht zu erkennen, ob die Spalte entweder `changed_at` heißt oder wörtlich
+    `changed at` (mit Leerzeichen) enthält.
     """
     try:
         db = os.getenv("MARIADB_DATABASE", "climateproject")
@@ -169,6 +176,8 @@ def fetch_user_by_username(username: str):
 
 def _resolve_created_by_id(created_by: str | int):
     """
+    Normiert den Wert von created_by auf eine User-ID.
+
     Schema-Hinweis:
     created_by scheint bei euch ein INTEGER (FK) zu sein (Fehler 1366).
     created_by wird daher vom Username auf die User.id gemappt.

@@ -12,9 +12,7 @@ from streamlit_autorefresh import st_autorefresh
 
 
 
-# ---------------------------------------------------------------------------
-# DB helpers
-# ---------------------------------------------------------------------------
+# Datenbank-Helfer
 
 def _fetch_df(sql: str, params: tuple | list | None = None) -> pd.DataFrame:
     with get_db_connection() as conn:
@@ -62,7 +60,7 @@ def _fetch_timeseries_for_session(session_id: str, points_shown: int) -> pd.Data
 
 
 def _fetch_full_session_for_edit(session_id: str) -> pd.DataFrame:
-    """Fetch all columns + rowid-equivalent (measurement_date as PK) for the editor."""
+    """Liest alle benötigten Spalten (measurement_date als PK-Äquivalent) für den Editor."""
     sql = """
         SELECT measurement_date, altitude, temperature, humidity,
                barometric_pressure, latitude, longitude
@@ -80,9 +78,7 @@ def _fetch_full_session_for_edit(session_id: str) -> pd.DataFrame:
     return df
 
 
-# ---------------------------------------------------------------------------
-# Map  –  only re-rendered when GPS data actually changed
-# ---------------------------------------------------------------------------
+# Karte – wird nur neu gerendert, wenn sich die GPS-Daten tatsächlich ändern
 
 def _geo_hash(df: pd.DataFrame) -> str:
     if df.empty:
@@ -126,9 +122,7 @@ def _render_map(df: pd.DataFrame, show_route: bool, map_points_limit: int) -> No
     st_folium(st.session_state["cached_folium_map"], width=None, height=360, returned_objects=[])
 
 
-# ---------------------------------------------------------------------------
-# Charts  –  interactive Plotly
-# ---------------------------------------------------------------------------
+# Diagramme – interaktive Plotly-Visualisierung
 
 _CHART_DEFS = [
     ("altitude",            "Höhe (m)",               "#3b82f6"),
@@ -171,7 +165,7 @@ def _apply_alpha_to_color(color: str, alpha: float) -> str:
         return _hex_to_rgba(c, alpha)
 
     if c.startswith("rgba(") and c.endswith(")"):
-        # replace existing alpha
+        # ersetze den Alpha-Wert in rgba(...) durch den neuen
         inside = c[len("rgba("):-1]
         parts = [p.strip() for p in inside.split(",")]
         if len(parts) == 4:
@@ -185,7 +179,7 @@ def _apply_alpha_to_color(color: str, alpha: float) -> str:
             return f"rgba({parts[0]},{parts[1]},{parts[2]},{alpha})"
         return c
 
-    # named CSS colors (e.g. 'blue') -> keep as-is to avoid producing invalid strings
+    # bennene CSS-Farben (z.B. "blue", "red") oder ungültige Werte werden unverändert zurückgegeben
     return c
 
 
@@ -234,9 +228,9 @@ def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str, y_zoo
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
-        uirevision=col,          # preserves zoom/pan across data refreshes
+        uirevision=col,       
 
-        # X-axis: range slider + quick-select buttons
+        # X-achse: saubere Linien, kein vertikales Grid, aber horizontale, plus RangeSlider und RangeSelector
         xaxis=dict(
             showgrid=False,
             showline=True,
@@ -257,7 +251,7 @@ def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str, y_zoo
             ),
         ),
 
-        # Y-axis: clean grid
+        # Y-achse: horizontale Gridlinien, aber keine vertikalen, plus dynamischer Bereich mit etwas Puffer
         yaxis=dict(
             showgrid=True,
             gridcolor="#f3f4f6",
@@ -267,12 +261,12 @@ def _make_plotly_chart(df: pd.DataFrame, col: str, title: str, color: str, y_zoo
             range=_get_y_axis_range(series[col], y_zoom_factor),
         ),
 
-        # Crosshair cursor on hover
+        # Hover: Einheitliches Tooltip-Feld, weißer Hintergrund, dünner Rahmen in Chart-Farbe
         hovermode="x unified",
         hoverlabel=dict(bgcolor="white", font_size=12, bordercolor=color),
     )
 
-    # Spike lines (crosshair)
+    # "Spikes" aktivieren: Dünne gestrichelte Linien, die von den Punkten bis zum Achsenbereich reichen, um die genaue Position zu verdeutlichen
     fig.update_xaxes(showspikes=True, spikecolor="#9ca3af", spikethickness=1,
                      spikedash="dot", spikemode="across")
     fig.update_yaxes(showspikes=True, spikecolor="#9ca3af", spikethickness=1,
@@ -306,9 +300,7 @@ def _render_charts(df: pd.DataFrame, y_zoom_factor: float) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# Manueller Eintrag sub-page
-# ---------------------------------------------------------------------------
+# Manueller Eintrag – Unterseite
 
 def _render_manueller_eintrag() -> None:
     st.subheader("Manueller Eintrag & Session-Verwaltung")
@@ -353,7 +345,7 @@ def _render_manueller_eintrag() -> None:
                 except Exception as exc:
                     st.error(f"Fehler beim Umbenennen: {exc}")
 
-    # ── Section 2: Datenpunkte manuell hinzufügen ────────────────────────────
+    #Section 2: Datenpunkte manuell hinzufügen 
     with st.expander("Datenpunkt manuell hinzufügen", expanded=False):
         st.markdown("Fügt einen einzelnen Messwert zur gewählten Session hinzu.")
 
@@ -392,7 +384,7 @@ def _render_manueller_eintrag() -> None:
             except Exception as exc:
                 st.error(f"Fehler beim Einfügen: {exc}")
 
-    # ── Section 3: Daten tabellarisch ansehen & bearbeiten ───────────────────
+    #Section 3: Daten tabellarisch ansehen & bearbeiten 
     with st.expander("Datenpunkte ansehen & bearbeiten", expanded=False):
         edit_session = st.selectbox("Session", options=session_ids, key="edit_view_session")
         df_edit = _fetch_full_session_for_edit(edit_session)
@@ -424,8 +416,6 @@ def _render_manueller_eintrag() -> None:
 
             if st.button("Änderungen speichern", key="btn_save_edits", type="primary"):
                 errors: list[str] = []
-                # We use (session_id, measurement_date) as the natural PK.
-                # Iterate over edited rows and UPDATE each one individually.
                 for _, row in edited.iterrows():
                     try:
                         _execute(
@@ -456,7 +446,7 @@ def _render_manueller_eintrag() -> None:
                     for k in ["cached_folium_map", "_map_geo_hash"]:
                         st.session_state.pop(k, None)
 
-            # Download as CSV
+            # Download als CSV: Nur die aktuell angezeigten Zeilen (inkl. Sortierung) der bearbeitbaren Tabelle
             csv_bytes = df_edit.to_csv(index=False).encode("utf-8")
             st.download_button(
                 "Als CSV herunterladen",
@@ -467,9 +457,7 @@ def _render_manueller_eintrag() -> None:
             )
 
 
-# ---------------------------------------------------------------------------
 # Main page entry point
-# ---------------------------------------------------------------------------
 
 def render_dashboard_page() -> None:
     st.title("Dashboard")
@@ -485,7 +473,7 @@ def render_dashboard_page() -> None:
         _render_manueller_eintrag()
         return
 
-    # ── Visualisierung ────────────────────────────────────────────────────────
+    # Visualisierung
     st.subheader("Visualisierung")
 
     with st.sidebar.expander("Auto-Refresh", expanded=True):

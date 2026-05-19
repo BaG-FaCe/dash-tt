@@ -11,7 +11,11 @@ from auth.auth import login, register_user
 from gui.navbar import render_navbar_side_dashboard, render_navbar_top_dashboard
 from backend_manager import BackendManager
 
-# --- MariaDB credentials via env (fülle die Werte später im Container ein) ---
+# ---------------------------------------------------------------------------
+# Konfiguration über Umgebungsvariablen
+# ACHTUNG: Diese muessen entweder gesetzt werden als env in Container umgebung (Portainer)
+# oder die defaults muessen hier im code angepasst werden beim local deployment (z.B. localhost statt 172.21.0.3)
+# ---------------------------------------------------------------------------
 os.environ.setdefault("MARIADB_HOST", "172.21.0.3")
 os.environ.setdefault("MARIADB_PORT", "3306")
 os.environ.setdefault("MARIADB_USER", "dashboard1")
@@ -21,7 +25,7 @@ os.environ.setdefault("MARIADB_DATABASE", "climateproject")
 
 
 # Deploy-Button und Footer ausblenden
-#Funktioniert niicht
+# Funktioniert nicht
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -43,7 +47,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",  # "auto", "expanded", "collapsed"
 )
 # -----------------------------
-# Session State defaults
+# Session State defaults setzen
+#(wwurd einamlaig definiert, damit sie in der gesamten App verfügbar sind, ohne dass sie vorher irgendwo gesetzt werden müssen)
 # -----------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False

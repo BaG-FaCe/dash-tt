@@ -1,10 +1,11 @@
 """
 backend_manager.py
 ==================
-Manages backend subprocess and MQTT control signal publishing.
-Allows the GUI to:
-  1. Start/stop the backend process
-  2. Send control signals (start/stop/continue) via MQTT
+Verwaltet den Backend-Subprozess und das Veröffentlichen von MQTT-Steuersignalen.
+
+Ermöglicht der GUI:
+  1. Start/Stop des Backend-Prozesses
+  2. Senden von Steuersignalen (Start/Stop/Fortsetzen) über MQTT
 """
 
 import os
@@ -21,7 +22,7 @@ from paho.mqtt.client import CallbackAPIVersion
 
 class BackendManager:
     """
-    Manages the backend process and MQTT control publishing.
+    Verwaltet den Backend-Prozess sowie das MQTT-Veröffentlichen von Steuersignalen.
     """
 
     def __init__(self, mqtt_broker: str = "127.0.0.1", mqtt_port: int = 1883):
@@ -34,11 +35,11 @@ class BackendManager:
         self._lock = threading.Lock()
         self.session_key = None
         
-        # Determine backend script path
+        # Ermittlung des Pfads zum Backend-Skript
         self.backend_script = Path(__file__).parent / "backend.py"
 
     def _init_mqtt(self):
-        """Initialize MQTT client for publishing control signals."""
+        """Initialisiert den MQTT-Client zum Veröffentlichen von Steuersignalen."""
         if self._mqtt_client is None:
             self._mqtt_client = mqtt.Client(CallbackAPIVersion.VERSION2)
             try:
@@ -51,9 +52,10 @@ class BackendManager:
 
     def start_backend(self) -> bool:
         """
-        Start the backend process in the background.
-        Generates a new session key for this session.
-        Returns True if successful, False if already running or error.
+        Startet den Backend-Prozess im Hintergrund.
+
+        Generiert dabei einen neuen Session-Key für diese Sitzung.
+        Gibt True zurück, wenn erfolgreich, sonst False (falls bereits laufend oder Fehler).
         """
         with self._lock:
             if self.backend_process is not None and self.backend_process.poll() is None:
@@ -61,11 +63,11 @@ class BackendManager:
                 return False
 
             try:
-                # Generate a new session key (UUID + timestamp)
+                # Generiert einen neuen Session-Key (UUID + Zeitstempel)
                 self.session_key = f"{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                print(f"[BackendManager] Generated session key: {self.session_key}")
-                
-                # Set up environment for backend process
+                print(f"[BackendManager] Session-Key generiert: {self.session_key}")
+
+                # Richtet die Umgebungsvariablen für den Backend-Prozess ein
                 env = os.environ.copy()
                 env["SESSION_KEY"] = self.session_key
                 
@@ -85,8 +87,9 @@ class BackendManager:
 
     def stop_backend(self) -> bool:
         """
-        Stop the backend process and generate a new session key.
-        Returns True if successful, False if not running or error.
+        Stoppt den Backend-Prozess und generiert einen neuen Session-Key.
+
+        Gibt True zurück, wenn erfolgreich, sonst False (falls nicht laufend oder Fehler).
         """
         with self._lock:
             if self.backend_process is None or self.backend_process.poll() is not None:
@@ -96,16 +99,18 @@ class BackendManager:
             try:
                 self.backend_process.terminate()
                 self.backend_process.wait(timeout=5)
-                print("[BackendManager] Backend stopped")
-                # Generate a new session key for the next session
+                print("[BackendManager] Backend gestoppt")
+                # Generiert einen neuen Session-Key für die nächste Sitzung
                 self.session_key = f"{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                print(f"[BackendManager] Generated new session key for next session: {self.session_key}")
+                print(
+                    f"[BackendManager] Neuer Session-Key für die nächste Sitzung: {self.session_key}"
+                )
                 return True
             except subprocess.TimeoutExpired:
                 self.backend_process.kill()
                 self.backend_process.wait()
-                print("[BackendManager] Backend killed (timeout)")
-                # Generate a new session key for the next session
+                print("[BackendManager] Backend beendet (Timeout)")
+                # Generiert einen neuen Session-Key für die nächste Sitzung
                 self.session_key = f"{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                 return True
             except Exception as e:
@@ -118,19 +123,19 @@ class BackendManager:
             return self.backend_process is not None and self.backend_process.poll() is None
 
     def get_session_key(self) -> str:
-        """Get the current session key."""
+        """Gibt den aktuellen Session-Key zurück."""
         with self._lock:
             return self.session_key or "Keine Session"
 
     def send_control_signal(self, continue_flag: bool) -> bool:
         """
-        Send control signal to backend via MQTT.
-        
+        Sendet ein Steuersignal an das Backend über MQTT.
+
         Args:
-            continue_flag: True to start/continue, False to stop
-            
+            continue_flag: True für Start/Fortsetzen, False zum Stoppen
+
         Returns:
-            True if signal sent successfully, False otherwise
+            True, wenn das Signal erfolgreich veröffentlicht wurde, sonst False
         """
         if not self._init_mqtt():
             print("[BackendManager] MQTT not available")
@@ -139,14 +144,14 @@ class BackendManager:
         try:
             payload = json.dumps({"continue": continue_flag})
             self._mqtt_client.publish(self.control_topic, payload, qos=1)
-            print(f"[BackendManager] Published control signal: continue={continue_flag}")
+            print(f"[BackendManager] Steuersignal veröffentlicht: continue={continue_flag}")
             return True
         except Exception as e:
             print(f"[BackendManager] Failed to publish control signal: {e}")
             return False
 
     def cleanup(self):
-        """Clean up resources."""
+        """Räumt Ressourcen auf (stoppt Backend und beendet MQTT, falls aktiv)."""
         self.stop_backend()
         if self._mqtt_client is not None:
             self._mqtt_client.loop_stop()

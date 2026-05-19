@@ -16,27 +16,27 @@ def render_controller_verwaltung_page() -> None:
 
 
 def render_esp32_control() -> None:
-    """Control interface for ESP32 data collection."""
+    """Bedienoberfläche zur Steuerung der ESP32-Datenerfassung."""
     st.subheader("ESP32 Kontrolle")
 
     manager = st.session_state.backend_manager
 
-    # --- Backend Status Section ---
+    # Backend Status und Steuerung
     st.markdown("### Backend Status")
     col1, col2, col3 = st.columns(3, gap="small")
 
     with col1:
-        # Display current backend status
+        # Display momentanen Backend-Status
         status = "Läuft" if manager.is_running() else "Gestoppt"
         st.metric("Backend Status", status)
 
     with col2:
-        # Display current session key
+        # Display Session Key (abgekürzt) für Debugging-Zwecke
         session_key = manager.get_session_key()
         st.metric("Session Key", session_key[:16] if len(session_key) > 16 else session_key)
 
     with col3:
-        # Backend start/stop buttons
+        # Backend starten/stoppen
         col_start, col_stop = st.columns(2)
         with col_start:
             if st.button("Start Backend", key="btn_start_backend", use_container_width=True):
@@ -50,7 +50,7 @@ def render_esp32_control() -> None:
             if st.button("Stop Backend", key="btn_stop_backend", use_container_width=True):
                 if manager.stop_backend():
                     st.success("Backend gestoppt!")
-                    # Stop the control signal as well
+                    # Stoppe den Control Signal, damit die Datenerfassung sofort aufhört, auch wenn das Backend noch kurz braucht, um vollständig zu terminieren.
                     st.session_state.control_signal = False
                     st.rerun()
                 else:
@@ -58,13 +58,12 @@ def render_esp32_control() -> None:
 
     st.divider()
 
-    # --- Control Signal Section ---
     st.markdown("### Datenerfassung Steuerung")
 
     if not manager.is_running():
         st.warning("Backend muss laufen, um die Datenerfassung zu steuern!")
     else:
-        # Toggle for control signal
+        # Toggle für Datenerfassung: Start/Stop
         col1, col2 = st.columns([1, 2], gap="small")
 
         with col1:
@@ -85,7 +84,7 @@ def render_esp32_control() -> None:
                 else:
                     st.error("Fehler beim Senden des Steuersignals")
 
-        # Status indicator
+        # Status indikatorino neihbourino
         if st.session_state.control_signal:
             st.success("Datenerfassung aktiv - ESP32 Daten werden aufgezeichnet")
         else:
@@ -93,7 +92,7 @@ def render_esp32_control() -> None:
 
     st.divider()
 
-    # --- Session Information ---
+    #Session Information
     st.markdown("### Session Information")
     session_key = manager.get_session_key()
     st.code(session_key, language="text")

@@ -12,7 +12,9 @@ from paho.mqtt.client import CallbackAPIVersion
 
 
 # ---------------------------------------------------------------------------
-# Config via environment variables
+# Konfiguration über Umgebungsvariablen
+# ACHTUNG: Diese muessen entweder gesetzt werden als env in Container umgebung (Portainer)
+# oder die defaults muessen hier im code angepasst werden beim local deployment (z.B. localhost statt 172.21.0.3)
 # ---------------------------------------------------------------------------
 os.environ.setdefault("MARIADB_HOST",     "172.21.0.3")
 os.environ.setdefault("MARIADB_PORT",     "3306")
@@ -35,19 +37,16 @@ DB_TABLE = "environmental_data"
 MQTT_BROKER  = os.getenv("MQTT_BROKER", "127.0.0.1")
 MQTT_PORT    = int(os.getenv("MQTT_PORT", "1883"))
 
-# ESP32 sensor topic (unchanged)
+# ESP32 Topic
 SENSOR_TOPIC = "home/esp32/status"
 
-# GPS topics published by the phone/GPS app
+# GPS topics (Wird ueber handy gepusht)
 GPS_LOCATION_TOPIC = "sensors2mqtt/haha"
 
-# Control topic for start/stop/continue signal
+# Control topic fuer esp32
 CONTROL_TOPIC = "sensor/control/continue"
 
 
-# ---------------------------------------------------------------------------
-# Database helper
-# ---------------------------------------------------------------------------
 class Database:
     def __init__(self, config: dict, table: str):
         self.config = config
@@ -81,14 +80,12 @@ class Database:
             self._conn.close()
         print("[DB] Connection closed")
 
-
-# ---------------------------------------------------------------------------
-# Control state  (thread-safe, written by MQTT control callback)
-# ---------------------------------------------------------------------------
 class ControlState:
     """
-    Holds the control flag for start/stop/continue signal.
-    Defaults to False (stopped) and only starts when explicitly set to true via MQTT.
+    Verwaltet das Steuervorzeichen (Start/Stop/Fortsetzen).
+
+    Standardmäßig auf False (gestoppt) und wird erst dann auf True gesetzt,
+    wenn es explizit via MQTT empfangen wurde.
     """
 
     def __init__(self):
@@ -105,15 +102,12 @@ class ControlState:
         with self._lock:
             return self._continue
 
-
-# ---------------------------------------------------------------------------
-# GPS state  (thread-safe, written by MQTT GPS callback, read by sensor handler)
-# ---------------------------------------------------------------------------
 class GpsState:
     """
-    Holds the most recent GPS fix received via MQTT (sensors2mqtt/haha/location).
-    Falls back to STATIC_LAT / STATIC_LON env vars for testing without a live
-    GPS source.
+    Hält den zuletzt empfangenen GPS-Fix über MQTT (sensors2mqtt/haha/location) vor.
+
+    Für Tests ohne Live-GPS wird auf die Umgebungsvariablen STATIC_LAT / STATIC_LON
+    zurückgegriffen.
     """
 
     def __init__(self):
@@ -153,31 +147,31 @@ class GpsState:
             return self._latitude is not None and self._longitude is not None
 
 
-# ---------------------------------------------------------------------------
-# Data enrichment
-# ---------------------------------------------------------------------------
+# Datenanreicherung
+
 def enrich(payload: dict, gps: GpsState) -> dict:
     """
-    Merge the ESP32 MQTT payload with GPS data and system time to produce a
-    complete DB row.
+    Kombiniert die ESP32-MQTT-Nutzdaten mit GPS-Daten und Systemzeit, um eine
+    vollständige Datenbankzeile zu erzeugen.
 
-    Fields taken from ESP32 payload : user_id, altitude,
-                                       temperature, humidity,
-                                       barometric_pressure, height
-    Fields set by this backend      : session_id (from SESSION_KEY env var),
-                                       measurement_date, created_at (system UTC),
-                                       latitude, longitude (from MQTT GPS),
-                                       active (always True)
+    Felder aus den ESP32-Nutzdaten : user_id, altitude,
+                                      temperature, humidity,
+                                      barometric_pressure, height
+    Felder, die dieses Backend setzt : session_id (aus SESSION_KEY-Umgebungsvariable),
+                                         measurement_date, created_at (System-UTC),
+                                         latitude, longitude (aus MQTT-GPS),
+                                         active (immer True)
 
-    The ESP32 clock is NOT used: its NTP sync is unreliable and the timestamp
-    can be epoch (2000-01-01) when the device has no network time yet.
+    Die ESP32-Uhr wird NICHT verwendet: deren NTP-Synchronisation ist unzuverlässig
+    und der Zeitstempel kann Epoch-Zeit (2000-01-01) sein, wenn das Gerät noch keine
+    Netzwerkzeit hat.
     """
     now = datetime.now(timezone.utc).replace(tzinfo=None)  # naive UTC for MariaDB
 
     return {
-        # session key from backend manager
+        # session_id aus Umgebungsvariable oder Payload (falls SESSION_KEY nicht gesetzt ist, z.B. im Testmodus)
         "session_id":           SESSION_KEY or payload.get("session_id", "unknown"),
-        # sensor readings from ESP32
+        # user_id als Integer extrahieren (z.B. "user_123" -> 123), falls es im Payload vorhanden ist; sonst 0
         "user_id":              int("".join(filter(str.isdigit, payload["user_id"])) or 0),
         "altitude":             float(payload["altitude"]),
         "temperature":          float(payload["temperature"]),
@@ -185,28 +179,30 @@ def enrich(payload: dict, gps: GpsState) -> dict:
         "barometric_pressure":  float(payload["barometric_pressure"]),
         "height":               float(payload["height"]),
 
-        # system UTC timestamp (replaces unreliable ESP32 clock)
+        # automatisch gesetzte Felder
         "measurement_date":     now,
         "created_at":           now,
 
-        # position from MQTT GPS topic
+        # GPS-Daten aus MQTT (können None sein, wenn noch kein Fix)
         "latitude":             gps.latitude,
         "longitude":            gps.longitude,
 
-        # record is active by definition when freshly inserted
+        # immer aktiv, da wir nur Daten speichern, wenn das Steuersignal auf True steht
         "active":               True,
     }
 
 
-# ---------------------------------------------------------------------------
-# Combined MQTT backend  (ESP32 sensor + MQTT GPS on one broker connection)
-# ---------------------------------------------------------------------------
+
+# Kombinierter MQTT-Backend (ESP32-Sensor + MQTT-GPS auf einer Broker-Verbindung)
+
 class MQTTBackend:
     """
-    Single MQTT client that subscribes to three topics on the same broker:
-      - SENSOR_TOPIC          -> parse ESP32 payload, enrich, insert into DB (if control flag is true)
-      - GPS_LOCATION_TOPIC    -> update GpsState (lat/lon/alt)
-      - CONTROL_TOPIC         -> update ControlState (start/stop/continue signal)
+    Ein einzelner MQTT-Client, der drei Topics auf demselben Broker abonniert:
+
+      - SENSOR_TOPIC       -> ESP32-Nutzdaten parsen, anreichern und in die DB einfügen
+                                (nur wenn das Steuersignal aktiv ist)
+      - GPS_LOCATION_TOPIC -> GpsState aktualisieren (lat/lon/alt)
+      - CONTROL_TOPIC      -> ControlState aktualisieren (Start/Stop/Fortsetzen)
     """
 
     def __init__(self, db: Database, gps: GpsState, control: ControlState):
@@ -218,9 +214,6 @@ class MQTTBackend:
         self.client.on_message = self._on_message
         self._connected = False
 
-    # ------------------------------------------------------------------
-    # MQTT callbacks
-    # ------------------------------------------------------------------
     def _on_connect(self, client, userdata, flags, rc, properties=None):
         if rc == 0:
             self._connected = True
@@ -234,7 +227,7 @@ class MQTTBackend:
         else:
             self._connected = False
             print(f"[MQTT] Connection failed, rc={rc}")
-            # Ensure control flag is set to False on connection failure
+            # sicherstellen, dass wir im Fehlerfall nicht weiter versuchen, Sensor-Daten zu verarbeiten
             self.control.update(False)
 
     @staticmethod
@@ -245,8 +238,8 @@ class MQTTBackend:
         Matches patterns like  :0,00  :1,50  :-3,14  but NOT
         the structural comma between two key-value pairs.
         """
-        # Replace  <digits>,<digits>  that appear after a colon/space
-        # (i.e. they are JSON number values, not object separators)
+        # Ersetze  <digits>,<digits>  durch  <digits>.<digits>  (nur innerhalb von Zahlen, nicht zwischen JSON-Elementen)
+        # (z.b. "temperature":23,5  ->  "temperature":23.5)
         return re.sub(r'(:\s*-?\d+),(\d+)', r'\1.\2', raw)
 
     def _on_message(self, client, userdata, msg):
@@ -256,8 +249,6 @@ class MQTTBackend:
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
-            # Try again after fixing European decimal commas (e.g. 0,00 -> 0.00)
-            fixed = self._fix_json(raw)
             try:
                 data = json.loads(fixed)
             except json.JSONDecodeError as e:
@@ -265,15 +256,15 @@ class MQTTBackend:
                 print(f"[MQTT] Raw payload: {raw[:300]}")
                 return
 
-        # ---- GPS location update ----------------------------------------
+        # GPS location update
         if topic == GPS_LOCATION_TOPIC:
             self._handle_gps(data)
 
-        # ---- Control signal update ----------------------------------------
+        # Control Signal updaten
         elif topic == CONTROL_TOPIC:
             self._handle_control(data)
 
-        # ---- ESP32 sensor reading ----------------------------------------
+        # ESP32 sensoren auslesen und in DB einfügen (nur wenn control signal auf True steht)
         elif topic == SENSOR_TOPIC:
             self._handle_sensor(data)
 
@@ -328,7 +319,7 @@ class MQTTBackend:
             print(f"[GPS] Could not parse location payload: {e}")
 
     def _handle_sensor(self, data: dict):
-        """Process ESP32 payload and write to DB (only if control flag is true and connected)."""
+        """Verarbeitet die ESP32-Nutzdaten und schreibt in die DB (nur wenn das Steuersignal aktiv ist und der MQTT-Client verbunden ist)."""
         print(f"[MQTT] Sensor  T={data.get('temperature')}°C  "
               f"H={data.get('humidity')}%  "
               f"P={data.get('barometric_pressure')}hPa  "
@@ -354,10 +345,6 @@ class MQTTBackend:
         except Exception as e:
             print(f"[ERROR] Could not process sensor message: {e}")
 
-    # ------------------------------------------------------------------
-    # Lifecycle
-    # ------------------------------------------------------------------
-    def start(self):
         self.client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
         self.client.loop_forever()   # blocks; signal handler stops it
 
@@ -366,9 +353,6 @@ class MQTTBackend:
         print("[MQTT] Disconnected")
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 def main():
     db      = Database(DB_CONFIG, DB_TABLE)
     gps     = GpsState()
