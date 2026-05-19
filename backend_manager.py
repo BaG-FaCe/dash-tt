@@ -25,7 +25,7 @@ class BackendManager:
     Verwaltet den Backend-Prozess sowie das MQTT-Veröffentlichen von Steuersignalen.
     """
 
-    def __init__(self, mqtt_broker: str = "127.0.0.1", mqtt_port: int = 1883):
+    def __init__(self, mqtt_broker: str = "172.24.240.214", mqtt_port: int = 1883):
         self.mqtt_broker = mqtt_broker
         self.mqtt_port = mqtt_port
         self.control_topic = "sensor/control/continue"

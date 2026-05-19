@@ -16,12 +16,12 @@ from paho.mqtt.client import CallbackAPIVersion
 # ACHTUNG: Diese muessen entweder gesetzt werden als env in Container umgebung (Portainer)
 # oder die defaults muessen hier im code angepasst werden beim local deployment (z.B. localhost statt 172.21.0.3)
 # ---------------------------------------------------------------------------
-os.environ.setdefault("MARIADB_HOST",     "172.21.0.3")
+os.environ.setdefault("MARIADB_HOST",     "172.24.240.214")
 os.environ.setdefault("MARIADB_PORT",     "3306")
-os.environ.setdefault("MARIADB_USER",     "dashboard1")
-os.environ.setdefault("MARIADB_PASSWORD", "dashpw")
+os.environ.setdefault("MARIADB_USER",     "root")
+os.environ.setdefault("MARIADB_PASSWORD", "admin")
 os.environ.setdefault("MARIADB_DATABASE", "climateproject")
-os.environ.setdefault("SESSION_KEY",      None)
+os.environ.setdefault("SESSION_KEY",      "")
 
 SESSION_KEY = os.getenv("SESSION_KEY")
 
@@ -34,7 +34,7 @@ DB_CONFIG = {
 }
 DB_TABLE = "environmental_data"
 
-MQTT_BROKER  = os.getenv("MQTT_BROKER", "127.0.0.1")
+MQTT_BROKER  = os.getenv("MQTT_BROKER", "172.24.240.214")
 MQTT_PORT    = int(os.getenv("MQTT_PORT", "1883"))
 
 # ESP32 Topic
@@ -345,8 +345,11 @@ class MQTTBackend:
         except Exception as e:
             print(f"[ERROR] Could not process sensor message: {e}")
 
+    def start(self) -> None:
+        """Connect to MQTT broker and block with loop_forever()."""
         self.client.connect(MQTT_BROKER, MQTT_PORT, keepalive=60)
-        self.client.loop_forever()   # blocks; signal handler stops it
+        self.client.loop_forever()
+
 
     def stop(self):
         self.client.disconnect()

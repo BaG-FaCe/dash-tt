@@ -16,10 +16,10 @@ from backend_manager import BackendManager
 # ACHTUNG: Diese muessen entweder gesetzt werden als env in Container umgebung (Portainer)
 # oder die defaults muessen hier im code angepasst werden beim local deployment (z.B. localhost statt 172.21.0.3)
 # ---------------------------------------------------------------------------
-os.environ.setdefault("MARIADB_HOST", "172.21.0.3")
+os.environ.setdefault("MARIADB_HOST", "172.24.240.214")
 os.environ.setdefault("MARIADB_PORT", "3306")
-os.environ.setdefault("MARIADB_USER", "dashboard1")
-os.environ.setdefault("MARIADB_PASSWORD", "dashpw")
+os.environ.setdefault("MARIADB_USER", "root")
+os.environ.setdefault("MARIADB_PASSWORD", "admin")
 os.environ.setdefault("MARIADB_DATABASE", "climateproject")
 
 
