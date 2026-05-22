@@ -1,3 +1,4 @@
-- [ ] Update backend.py: add MQTTBackend.start() to connect and start loop_forever
-- [ ] Update backend.py: remove erroneous self.client.connect()/loop_forever() calls from _handle_sensor
-- [ ] Run a quick syntax check / start backend manually to verify it stays running
+- [ ] Implementieren von vollständiger Digitaler Mircocontroller Verwaltung, mit Speicherung in Datenban
+- [ ] eine 1 im Projekt bekommen
+- [ ] den Lehrer dazu aufzufordern eine kleine Nachricht die lautet "Spaghetti sind keine vegetarischen Würste" zu hinterlassen, wenn er sich dieses Repo anguckt ;)
+
